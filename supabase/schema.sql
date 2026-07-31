@@ -48,7 +48,7 @@ create table if not exists bookings (
   status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled')),
   deposit_paid boolean not null default false,
   deposit_paid_at timestamptz,
-  stripe_checkout_session_id text,
+  stripe_payment_intent_id text,
 
   contract_signed boolean not null default false,
   contract_signed_at timestamptz,

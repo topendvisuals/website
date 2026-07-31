@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import HorizonDivider from '@/components/HorizonDivider';
+import DepositPaymentForm from '@/components/DepositPaymentForm';
 import { formatPrice } from '@/lib/packages';
 
 // Placeholder terms — replace with Jethro's actual wording when finalised.
@@ -31,15 +32,12 @@ interface BookingSummary {
 
 export default function FinaliseBookingClient() {
   const { id } = useParams<{ id: string }>();
-  const searchParams = useSearchParams();
-  const depositFlag = searchParams.get('deposit');
 
   const [booking, setBooking] = useState<BookingSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [payingDeposit, setPayingDeposit] = useState(false);
-  const [payError, setPayError] = useState<string | null>(null);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -66,26 +64,29 @@ export default function FinaliseBookingClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  async function handlePayDeposit() {
-    setPayingDeposit(true);
-    setPayError(null);
-    try {
-      const res = await fetch('/api/create-deposit-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId: id }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.url) {
-        setPayError(data.error || 'Could not start payment. Please try again.');
-        setPayingDeposit(false);
-        return;
+  // Stripe confirms the card payment instantly in the browser, but the
+  // webhook that actually flips `deposit_paid` in Supabase can lag by a
+  // second or two. Poll briefly rather than making the customer refresh.
+  async function handleDepositPaid() {
+    setConfirmingPayment(true);
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      try {
+        const res = await fetch(`/api/bookings/${id}`);
+        const data = await res.json();
+        if (res.ok && data.booking?.deposit_paid) {
+          setBooking(data.booking);
+          setConfirmingPayment(false);
+          return;
+        }
+      } catch {
+        // keep polling — a single failed check isn't fatal
       }
-      window.location.href = data.url;
-    } catch {
-      setPayError('Network error — please try again.');
-      setPayingDeposit(false);
     }
+    setConfirmingPayment(false);
+    // Fall back to a normal reload of whatever the latest state is, even
+    // if it's still catching up — better than leaving stale data on screen.
+    loadBooking();
   }
 
   async function handleSignContract(e: React.FormEvent) {
@@ -153,12 +154,6 @@ export default function FinaliseBookingClient() {
       <HorizonDivider />
 
       <section className="container-wide py-16 max-w-2xl mx-auto space-y-8">
-        {depositFlag === 'cancelled' && (
-          <div className="rounded-lg bg-gold-400/15 border border-gold-400/40 text-ink-700 px-4 py-3 text-sm">
-            Deposit payment was cancelled — no charge was made. You can try again below.
-          </div>
-        )}
-
         {/* Step 1 — Deposit */}
         <div className="rounded-2xl border border-sand-200 bg-white p-7">
           <div className="flex items-center justify-between mb-3">
@@ -171,17 +166,10 @@ export default function FinaliseBookingClient() {
           </p>
           {booking.deposit_paid ? (
             <p className="text-sm text-poinciana font-medium">Deposit received — thank you.</p>
+          ) : confirmingPayment ? (
+            <p className="text-sm text-ink-700/70">Confirming your payment…</p>
           ) : (
-            <>
-              <button
-                onClick={handlePayDeposit}
-                disabled={payingDeposit}
-                className="rounded-full bg-poinciana disabled:opacity-60 hover:bg-poinciana-600 text-sand-100 font-medium px-7 py-3 transition-colors"
-              >
-                {payingDeposit ? 'Redirecting to secure payment…' : `Pay ${formatPrice(booking.deposit_cents)} deposit`}
-              </button>
-              {payError && <p className="text-sm text-poinciana-600 mt-3">{payError}</p>}
-            </>
+            <DepositPaymentForm bookingId={booking.id} depositCents={booking.deposit_cents} onPaid={handleDepositPaid} />
           )}
         </div>
 

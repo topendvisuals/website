@@ -36,7 +36,7 @@ external accounts:
 | `RESEND_API_KEY`, `EMAIL_FROM` | resend.com → API Keys (verify your sending domain first) |
 | `OWNER_NOTIFICATION_EMAIL` | Jethro's real inbox for new-booking alerts |
 | `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe Dashboard → Developers → API keys |
-| `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Developers → Webhooks → add endpoint `https://YOURSITE/api/webhooks/stripe`, subscribe to `checkout.session.completed` |
+| `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Developers → Webhooks → add endpoint `https://YOURSITE/api/webhooks/stripe`, subscribe to `payment_intent.succeeded` |
 | `NEXT_PUBLIC_SITE_URL` | Your live domain, e.g. `https://topendvisuals.com.au` |
 
 ## 4. Supabase setup
@@ -78,8 +78,12 @@ external accounts:
   e-signature product; swap in a provider on `app/api/bookings/[id]/contract/route.ts` if a
   stronger evidentiary standard is needed. The contract text itself is a placeholder summary
   — replace with your actual legal terms before launch.
-- **Deposit payment**: implemented with Stripe Checkout (industry standard, easy Netlify
-  fit) since a specific processor wasn't named.
+- **Deposit payment**: implemented as an embedded Stripe Payment Element directly on `/payment/[id]`
+  (via `@stripe/react-stripe-js`) rather than a redirect to a separate Stripe-hosted checkout page,
+  so customers never leave the site. If your Supabase project was created before this change, run
+  `supabase/migrations/002_embedded_payment.sql` once — it renames a column to match. Also update
+  your existing Stripe webhook endpoint to listen for `payment_intent.succeeded` instead of
+  `checkout.session.completed` if it was set up under the old flow.
 - **Placeholder contact details**: the phone number and social links in the Footer and
   Contact page are placeholders, flagged in the page copy — replace with real ones.
 - **Follow-up email**: the brief asked for a separate "please pay your deposit" email after

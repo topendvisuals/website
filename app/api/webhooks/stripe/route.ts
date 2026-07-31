@@ -8,6 +8,13 @@ export const dynamic = 'force-dynamic';
 
 // Stripe requires the raw request body to verify webhook signatures, so
 // this route reads req.text() rather than req.json().
+//
+// Listens for `payment_intent.succeeded` — the deposit is now collected via
+// an embedded Stripe Payment Element on /payment/[id] rather than a
+// redirect to a Stripe-hosted Checkout page, so this replaces the older
+// `checkout.session.completed` event. Update the event selected on your
+// Stripe webhook endpoint (Developers → Webhooks) to
+// `payment_intent.succeeded` if it's still set to the old event.
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
   const signature = req.headers.get('stripe-signature');
@@ -26,9 +33,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as any;
-    const bookingId = session.metadata?.bookingId;
+  if (event.type === 'payment_intent.succeeded') {
+    const intent = event.data.object as any;
+    const bookingId = intent.metadata?.bookingId;
     if (bookingId) {
       const { data: updated, error } = await supabaseAdmin
         .from('bookings')

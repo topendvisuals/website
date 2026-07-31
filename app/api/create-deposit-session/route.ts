@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
       },
     ],
     metadata: { bookingId: booking.id },
-    success_url: `${SITE_URL}/booking/${booking.id}?deposit=success`,
-    cancel_url: `${SITE_URL}/booking/${booking.id}?deposit=cancelled`,
+    success_url: `${SITE_URL}/payment/${booking.id}?deposit=success`,
+    cancel_url: `${SITE_URL}/payment/${booking.id}?deposit=cancelled`,
   });
 
   await supabaseAdmin

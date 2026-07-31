@@ -10,6 +10,7 @@ const FILTERS: { id: GalleryCategory | 'all'; label: string }[] = [
   { id: 'couple', label: 'Couples' },
   { id: 'portrait', label: 'Portraits' },
   { id: 'event', label: 'Events' },
+  { id: 'wedding', label: 'Weddings' },
 ];
 
 export default function Gallery() {

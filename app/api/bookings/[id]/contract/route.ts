@@ -6,12 +6,11 @@ import { getPackage } from '@/lib/packages';
 export const dynamic = 'force-dynamic';
 
 // ASSUMPTION: no e-signature provider (e.g. DocuSign/HelloSign) was
-// specified, so this implements a lightweight in-house agreement: the
-// customer types their full legal name against the displayed contract text
-// and ticks a consent checkbox, timestamped and stored against the booking.
-// This is suitable for a small-business shoot contract but is not a
-// certified e-signature product — swap in DocuSign/HelloSign here if a
-// higher bar of signature evidence is required later.
+// specified, and the client asked for a simple "click to agree" flow rather
+// than a typed signature. This stores a timestamped consent record against
+// the booking, using the customer's name already on file. This is workable
+// for a small studio but isn't a certified e-signature product — swap in a
+// provider here if a stronger evidentiary standard is needed later.
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   let body: any;
   try {
@@ -20,10 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
   }
 
-  const { signatureName, agreed } = body || {};
-  if (!signatureName || typeof signatureName !== 'string' || signatureName.trim().length < 2) {
-    return NextResponse.json({ error: 'Please type your full name to sign.' }, { status: 400 });
-  }
+  const { agreed } = body || {};
   if (!agreed) {
     return NextResponse.json({ error: 'Please confirm you agree to the terms.' }, { status: 400 });
   }
@@ -43,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .update({
       contract_signed: true,
       contract_signed_at: new Date().toISOString(),
-      contract_signature_name: signatureName.trim(),
+      contract_signature_name: booking.customer_name,
     })
     .eq('id', params.id)
     .select()

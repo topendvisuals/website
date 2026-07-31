@@ -1,4 +1,4 @@
-export type GalleryCategory = 'portrait' | 'couple' | 'family' | 'event';
+export type GalleryCategory = 'portrait' | 'couple' | 'family' | 'event' | 'wedding';
 
 export interface GalleryItem {
   id: string;
@@ -19,6 +19,7 @@ const CAPTIONS: Record<GalleryCategory, string> = {
   couple: 'Couple session',
   portrait: 'Portrait session',
   event: 'Event coverage',
+  wedding: 'Wedding coverage',
 };
 
 const TONES: GalleryItem['tone'][] = ['harbour', 'gold', 'poinciana', 'ink'];
@@ -31,6 +32,7 @@ const COUNTS: Record<GalleryCategory, number> = {
   couple: 3,
   portrait: 3,
   event: 3,
+  wedding: 2,
 };
 
 function buildGallery(): GalleryItem[] {

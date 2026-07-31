@@ -44,7 +44,7 @@ interface BookingEmailInput {
 
 export async function sendCustomerBookingRequestEmail(input: BookingEmailInput) {
   const resend = getResend();
-  const finaliseUrl = `${SITE_URL}/booking/${input.bookingId}`;
+  const finaliseUrl = `${SITE_URL}/payment/${input.bookingId}`;
   const prettyDate = new Date(input.sessionDate + 'T00:00:00').toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',

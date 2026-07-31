@@ -5,6 +5,17 @@ import { useParams, useSearchParams } from 'next/navigation';
 import HorizonDivider from '@/components/HorizonDivider';
 import { formatPrice } from '@/lib/packages';
 
+// Placeholder terms — replace with Jethro's actual wording when finalised.
+// Keeping this as a simple array means updating the real terms later is a
+// one-line-per-item edit, no layout changes needed.
+const BOOKING_TERMS: string[] = [
+  'A 20% deposit secures the session date and is refundable up to 7 days before the session.',
+  'The remaining balance is due on the day of the session.',
+  "Rescheduling is available with at least 48 hours' notice, subject to availability.",
+  'Edited images are delivered via a private online gallery within the timeframe stated for your package.',
+  'Top End Visuals retains copyright; the client receives a print-release for personal use unless a commercial licence was purchased.',
+];
+
 interface BookingSummary {
   id: string;
   package_label: string;
@@ -30,7 +41,6 @@ export default function FinaliseBookingClient() {
   const [payingDeposit, setPayingDeposit] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
 
-  const [signatureName, setSignatureName] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
   const [signError, setSignError] = useState<string | null>(null);
@@ -86,7 +96,7 @@ export default function FinaliseBookingClient() {
       const res = await fetch(`/api/bookings/${id}/contract`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signatureName, agreed }),
+        body: JSON.stringify({ agreed }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -186,34 +196,18 @@ export default function FinaliseBookingClient() {
             <p className="text-sm text-poinciana font-medium">Contract signed — thank you.</p>
           ) : (
             <>
-              <div className="rounded-lg bg-sand-100 border border-sand-200 p-4 text-xs text-ink-700/80 leading-relaxed max-h-40 overflow-y-auto mb-5">
-                <p className="font-medium mb-2">Top End Visuals — Booking Agreement (summary)</p>
-                <p className="mb-2">
-                  1. A 20% deposit secures the session date and is refundable up to 7 days before the
-                  session. 2. The remaining balance of {formatPrice(booking.price_cents - booking.deposit_cents)}{' '}
-                  is due on the day of the session. 3. Rescheduling is available with at least 48 hours'
-                  notice, subject to availability. 4. Edited images are delivered via a private online
-                  gallery within the timeframe stated for your package. 5. Top End Visuals retains
-                  copyright; the client receives a print-release for personal use unless a commercial
-                  licence was purchased.
-                </p>
-                <p className="text-ink-700/50">
-                  ASSUMPTION: replace this summary with your full legal contract text before launch.
+              <div className="rounded-lg bg-sand-100 border border-sand-200 p-4 mb-5 max-h-56 overflow-y-auto">
+                <p className="text-sm font-medium text-ink mb-3">Top End Visuals — Booking Terms &amp; Conditions</p>
+                <ul className="space-y-2 text-xs text-ink-700/80 leading-relaxed list-disc pl-4">
+                  {BOOKING_TERMS.map((term) => (
+                    <li key={term}>{term}</li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-ink-700/50 mt-3">
+                  Placeholder terms — final wording to be confirmed.
                 </p>
               </div>
               <form onSubmit={handleSignContract} className="space-y-4">
-                <div>
-                  <label htmlFor="sig-name" className="block text-sm font-medium text-ink-700 mb-1">
-                    Type your full legal name to sign
-                  </label>
-                  <input
-                    id="sig-name"
-                    required
-                    value={signatureName}
-                    onChange={(e) => setSignatureName(e.target.value)}
-                    className="w-full rounded-lg border border-sand-200 bg-white px-4 py-2.5 text-sm font-display italic focus:border-poinciana"
-                  />
-                </div>
                 <label className="flex items-start gap-2 text-sm text-ink-700/85">
                   <input
                     type="checkbox"
@@ -221,15 +215,15 @@ export default function FinaliseBookingClient() {
                     onChange={(e) => setAgreed(e.target.checked)}
                     className="mt-1"
                   />
-                  I have read and agree to the booking agreement above.
+                  I, {booking.customer_name}, agree to these terms and conditions.
                 </label>
                 {signError && <p className="text-sm text-poinciana-600">{signError}</p>}
                 <button
                   type="submit"
-                  disabled={signing}
-                  className="rounded-full bg-ink disabled:opacity-60 hover:bg-harbour text-sand-100 font-medium px-7 py-3 transition-colors"
+                  disabled={signing || !agreed}
+                  className="rounded-full bg-ink disabled:opacity-40 hover:bg-harbour text-sand-100 font-medium px-7 py-3 transition-colors"
                 >
-                  {signing ? 'Saving signature…' : 'Sign contract'}
+                  {signing ? 'Saving…' : 'I agree with these terms and conditions'}
                 </button>
               </form>
             </>

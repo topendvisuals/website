@@ -30,8 +30,8 @@ export default function ContactPage() {
           <ul className="space-y-5 text-sm">
             <li>
               <p className="text-ink-700/50 uppercase tracking-widest text-xs mb-1">Email</p>
-              <a href="mailto:jethro@topendvisuals.com.au" className="text-ink font-medium hover:text-poinciana">
-                jethro@topendvisuals.com.au
+              <a href="mailto:jethro@topendvisuals.com" className="text-ink font-medium hover:text-poinciana">
+                jethro@topendvisuals.com
               </a>
             </li>
             <li>

@@ -80,6 +80,18 @@ create table if not exists contact_messages (
 );
 
 -- ----------------------------------------------------------------------------
+-- email_templates — editable subject/intro text for the admin dashboard's
+-- "Email templates" page. Surrounding email structure (summary tables,
+-- buttons, links) stays code-controlled; only the wording here is editable.
+-- ----------------------------------------------------------------------------
+create table if not exists email_templates (
+  key text primary key,
+  subject text not null,
+  intro_html text not null,
+  updated_at timestamptz not null default now()
+);
+
+-- ----------------------------------------------------------------------------
 -- Auto-confirm a booking once deposit + contract are both done
 -- ----------------------------------------------------------------------------
 create or replace function set_booking_confirmed()
@@ -109,6 +121,32 @@ create trigger trg_set_booking_confirmed
 alter table availability enable row level security;
 alter table bookings enable row level security;
 alter table contact_messages enable row level security;
+alter table email_templates enable row level security;
+
+-- Seed the four editable emails with their default wording (see
+-- migrations/003_admin_dashboard.sql for details on how these are used).
+insert into email_templates (key, subject, intro_html) values
+  (
+    'customer_request',
+    'Your Christmas session request — {{sessionDate}}',
+    'Thanks, {{customerName}} — we''ve got your request. Here''s what you booked in for:'
+  ),
+  (
+    'owner_notification',
+    'New booking request: {{packageLabel}} — {{sessionDate}}',
+    'New booking request received.'
+  ),
+  (
+    'booking_confirmed_customer',
+    'Booking confirmed — see you soon!',
+    'You''re confirmed, {{customerName}} 🎄 Deposit received and contract signed — your Christmas session is locked in for {{sessionDate}}. We can''t wait.'
+  ),
+  (
+    'booking_confirmed_owner',
+    'Confirmed: {{packageLabel}} — {{sessionDate}}',
+    '{{customerName}} is fully confirmed for {{packageLabel}} on {{sessionDate}}. Deposit paid and contract signed.'
+  )
+on conflict (key) do nothing;
 
 -- ----------------------------------------------------------------------------
 -- Seed data (ASSUMPTION — replace/extend via Table Editor):

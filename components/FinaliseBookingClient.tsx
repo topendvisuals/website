@@ -4,18 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import HorizonDivider from '@/components/HorizonDivider';
 import DepositPaymentForm from '@/components/DepositPaymentForm';
+import ContractAgreement from '@/components/ContractAgreement';
+import { useDepositConfirmation } from '@/lib/useDepositConfirmation';
 import { formatPrice } from '@/lib/packages';
-
-// Placeholder terms — replace with Jethro's actual wording when finalised.
-// Keeping this as a simple array means updating the real terms later is a
-// one-line-per-item edit, no layout changes needed.
-const BOOKING_TERMS: string[] = [
-  'A 20% deposit secures the session date and is refundable up to 7 days before the session.',
-  'The remaining balance is due on the day of the session.',
-  "Rescheduling is available with at least 48 hours' notice, subject to availability.",
-  'Edited images are delivered via a private online gallery within the timeframe stated for your package.',
-  'Top End Visuals retains copyright; the client receives a print-release for personal use unless a commercial licence was purchased.',
-];
 
 interface BookingSummary {
   id: string;
@@ -30,6 +21,10 @@ interface BookingSummary {
   contract_signed: boolean;
 }
 
+// Fallback page for anyone who didn't finish paying/signing during the
+// booking flow itself (most customers now complete both steps inline in
+// the booking modal — see components/BookingModal.tsx). The link in their
+// confirmation email always points here so there's a way back regardless.
 export default function FinaliseBookingClient() {
   const { id } = useParams<{ id: string }>();
 
@@ -37,11 +32,8 @@ export default function FinaliseBookingClient() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const [confirmingPayment, setConfirmingPayment] = useState(false);
-
-  const [agreed, setAgreed] = useState(false);
-  const [signing, setSigning] = useState(false);
-  const [signError, setSignError] = useState<string | null>(null);
+  const { confirmingPayment, confirmDelayed, handleDepositPaid, handleManualRecheck } =
+    useDepositConfirmation<BookingSummary>({ bookingId: id, onBookingUpdate: setBooking });
 
   async function loadBooking() {
     try {
@@ -64,58 +56,8 @@ export default function FinaliseBookingClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Stripe confirms the card payment instantly in the browser, but the
-  // webhook that actually flips `deposit_paid` in Supabase can lag by a
-  // second or two. Poll briefly rather than making the customer refresh.
-  async function handleDepositPaid() {
-    setConfirmingPayment(true);
-    for (let attempt = 0; attempt < 6; attempt++) {
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      try {
-        const res = await fetch(`/api/bookings/${id}`);
-        const data = await res.json();
-        if (res.ok && data.booking?.deposit_paid) {
-          setBooking(data.booking);
-          setConfirmingPayment(false);
-          return;
-        }
-      } catch {
-        // keep polling — a single failed check isn't fatal
-      }
-    }
-    setConfirmingPayment(false);
-    // Fall back to a normal reload of whatever the latest state is, even
-    // if it's still catching up — better than leaving stale data on screen.
-    loadBooking();
-  }
-
-  async function handleSignContract(e: React.FormEvent) {
-    e.preventDefault();
-    setSigning(true);
-    setSignError(null);
-    try {
-      const res = await fetch(`/api/bookings/${id}/contract`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agreed }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setSignError(data.error || 'Could not save your signature. Please try again.');
-        return;
-      }
-      setBooking(data.booking);
-    } catch {
-      setSignError('Network error — please try again.');
-    } finally {
-      setSigning(false);
-    }
-  }
-
   if (loading) {
-    return (
-      <div className="container-wide py-28 text-center text-ink-700/70">Loading your booking…</div>
-    );
+    return <div className="container-wide py-28 text-center text-ink-700/70">Loading your booking…</div>;
   }
 
   if (loadError || !booking) {
@@ -146,7 +88,7 @@ export default function FinaliseBookingClient() {
           </h1>
           <p className="text-sand-200/80">
             {booking.status === 'confirmed'
-              ? 'Deposit paid and contract signed. We\'ll see you then.'
+              ? "Deposit paid and contract signed. We'll see you then."
               : 'Complete both steps below to lock in your date.'}
           </p>
         </div>
@@ -168,6 +110,19 @@ export default function FinaliseBookingClient() {
             <p className="text-sm text-poinciana font-medium">Deposit received — thank you.</p>
           ) : confirmingPayment ? (
             <p className="text-sm text-ink-700/70">Confirming your payment…</p>
+          ) : confirmDelayed ? (
+            <div className="rounded-lg bg-gold-400/15 border border-gold-400/40 p-4">
+              <p className="text-sm text-ink-700/85 mb-3">
+                Your card payment went through, but we&apos;re still waiting on confirmation from our
+                system — this sometimes takes a little longer than usual. No need to pay again.
+              </p>
+              <button
+                onClick={handleManualRecheck}
+                className="text-sm font-medium rounded-full bg-ink text-sand-100 px-5 py-2.5 hover:bg-harbour transition-colors"
+              >
+                Check again
+              </button>
+            </div>
           ) : (
             <DepositPaymentForm bookingId={booking.id} depositCents={booking.deposit_cents} onPaid={handleDepositPaid} />
           )}
@@ -179,42 +134,10 @@ export default function FinaliseBookingClient() {
             <h2 className="font-display text-xl text-ink">2. Sign your booking contract</h2>
             <StatusPill done={booking.contract_signed} />
           </div>
-
           {booking.contract_signed ? (
             <p className="text-sm text-poinciana font-medium">Contract signed — thank you.</p>
           ) : (
-            <>
-              <div className="rounded-lg bg-sand-100 border border-sand-200 p-4 mb-5 max-h-56 overflow-y-auto">
-                <p className="text-sm font-medium text-ink mb-3">Top End Visuals — Booking Terms &amp; Conditions</p>
-                <ul className="space-y-2 text-xs text-ink-700/80 leading-relaxed list-disc pl-4">
-                  {BOOKING_TERMS.map((term) => (
-                    <li key={term}>{term}</li>
-                  ))}
-                </ul>
-                <p className="text-[11px] text-ink-700/50 mt-3">
-                  Placeholder terms — final wording to be confirmed.
-                </p>
-              </div>
-              <form onSubmit={handleSignContract} className="space-y-4">
-                <label className="flex items-start gap-2 text-sm text-ink-700/85">
-                  <input
-                    type="checkbox"
-                    checked={agreed}
-                    onChange={(e) => setAgreed(e.target.checked)}
-                    className="mt-1"
-                  />
-                  I, {booking.customer_name}, agree to these terms and conditions.
-                </label>
-                {signError && <p className="text-sm text-poinciana-600">{signError}</p>}
-                <button
-                  type="submit"
-                  disabled={signing || !agreed}
-                  className="rounded-full bg-ink disabled:opacity-40 hover:bg-harbour text-sand-100 font-medium px-7 py-3 transition-colors"
-                >
-                  {signing ? 'Saving…' : 'I agree with these terms and conditions'}
-                </button>
-              </form>
-            </>
+            <ContractAgreement bookingId={booking.id} customerName={booking.customer_name} onSigned={setBooking} />
           )}
         </div>
 

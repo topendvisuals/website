@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { Package } from './types';
 import { formatPrice } from './packages';
+import { getEmailTemplate } from './emailTemplates';
 
 function getResend() {
   if (!process.env.RESEND_API_KEY) {
@@ -9,9 +10,9 @@ function getResend() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
-const FROM = process.env.EMAIL_FROM || 'Top End Visuals <bookings@topendvisuals.com.au>';
-const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || 'jethro@topendvisuals.com.au';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://topendvisuals.com.au';
+const FROM = process.env.EMAIL_FROM || 'Top End Visuals <bookings@topendvisuals.com>';
+const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || 'jethro@topendvisuals.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://topendvisuals.com';
 
 function wrapper(bodyHtml: string) {
   return `
@@ -42,30 +43,39 @@ interface BookingEmailInput {
   slotType: 'standard' | 'sunrise';
 }
 
-export async function sendCustomerBookingRequestEmail(input: BookingEmailInput) {
-  const resend = getResend();
-  const finaliseUrl = `${SITE_URL}/payment/${input.bookingId}`;
-  const prettyDate = new Date(input.sessionDate + 'T00:00:00').toLocaleDateString('en-AU', {
+function prettyDate(iso: string) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
+}
+
+export async function sendCustomerBookingRequestEmail(input: BookingEmailInput) {
+  const resend = getResend();
+  const finaliseUrl = `${SITE_URL}/payment/${input.bookingId}`;
+  const dateLabel = prettyDate(input.sessionDate);
   const slotLabel = input.slotType === 'sunrise' ? 'Sunrise session' : 'Standard session';
 
+  const { subject, introHtml } = await getEmailTemplate('customer_request', {
+    customerName: input.customerName,
+    sessionDate: dateLabel,
+    packageLabel: input.pkg.label,
+  });
+
   const html = wrapper(`
-    <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">Thanks, ${escapeHtml(input.customerName)} — we've got your request</h1>
-    <p>Your Christmas photoshoot request has landed safely with us. Here's what you booked in for:</p>
+    <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">${introHtml}</h1>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr><td style="padding:6px 0;color:#5b6b6d;">Package</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${escapeHtml(input.pkg.label)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5b6b6d;">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${prettyDate}</td></tr>
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${dateLabel}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Session</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${slotLabel}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Package price</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${formatPrice(input.pkg.priceCents)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Refundable deposit due now</td><td style="padding:6px 0;text-align:right;font-weight:bold;color:#A6371F;">${formatPrice(input.pkg.depositCents)}</td></tr>
     </table>
-    <p><strong>Your date is held, not yet confirmed.</strong> To lock it in, please pay your 20% refundable deposit and sign your booking contract — both take about two minutes:</p>
+    <p><strong>Your date is held, not yet confirmed.</strong> If you already paid your deposit and signed your contract on the website, you're all set — you'll get a separate confirmation shortly. If you didn't quite finish, pick up right where you left off here:</p>
     <p style="text-align:center;margin:28px 0;">
-      <a href="${finaliseUrl}" style="background:#C1442D;color:#FAF7F0;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;display:inline-block;">Finalise your booking</a>
+      <a href="${finaliseUrl}" style="background:#C1442D;color:#FAF7F0;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;display:inline-block;">Finish paying deposit &amp; signing contract</a>
     </p>
     <p style="color:#5b6b6d;font-size:13px;">If you didn't request this booking, you can safely ignore this email — no deposit means no confirmed session.</p>
   `);
@@ -73,28 +83,29 @@ export async function sendCustomerBookingRequestEmail(input: BookingEmailInput) 
   return resend.emails.send({
     from: FROM,
     to: input.customerEmail,
-    subject: `Your Christmas session request — ${prettyDate}`,
+    subject,
     html,
   });
 }
 
 export async function sendOwnerBookingNotificationEmail(input: BookingEmailInput) {
   const resend = getResend();
-  const prettyDate = new Date(input.sessionDate + 'T00:00:00').toLocaleDateString('en-AU', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+  const dateLabel = prettyDate(input.sessionDate);
+
+  const { subject, introHtml } = await getEmailTemplate('owner_notification', {
+    customerName: input.customerName,
+    sessionDate: dateLabel,
+    packageLabel: input.pkg.label,
   });
 
   const html = wrapper(`
-    <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">New booking request</h1>
+    <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">${introHtml}</h1>
     <table style="width:100%;border-collapse:collapse;margin:16px 0;">
       <tr><td style="padding:6px 0;color:#5b6b6d;">Customer</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${escapeHtml(input.customerName)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Email</td><td style="padding:6px 0;text-align:right;">${escapeHtml(input.customerEmail)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Phone</td><td style="padding:6px 0;text-align:right;">${escapeHtml(input.customerPhone)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Package</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${escapeHtml(input.pkg.label)}</td></tr>
-      <tr><td style="padding:6px 0;color:#5b6b6d;">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${prettyDate} (${input.slotType})</td></tr>
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${dateLabel} (${input.slotType})</td></tr>
       ${input.notes ? `<tr><td style="padding:6px 0;color:#5b6b6d;">Notes</td><td style="padding:6px 0;text-align:right;">${escapeHtml(input.notes)}</td></tr>` : ''}
     </table>
     <p>Status: <strong>Pending</strong> — waiting on deposit &amp; signed contract. You'll get a second email the moment both are done.</p>
@@ -103,34 +114,40 @@ export async function sendOwnerBookingNotificationEmail(input: BookingEmailInput
   return resend.emails.send({
     from: FROM,
     to: OWNER_EMAIL,
-    subject: `New booking request: ${input.pkg.label} — ${prettyDate}`,
+    subject,
     html,
   });
 }
 
 export async function sendBookingConfirmedEmails(input: BookingEmailInput) {
   const resend = getResend();
-  const prettyDate = new Date(input.sessionDate + 'T00:00:00').toLocaleDateString('en-AU', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const dateLabel = prettyDate(input.sessionDate);
+
+  const [customerTemplate, ownerTemplate] = await Promise.all([
+    getEmailTemplate('booking_confirmed_customer', {
+      customerName: input.customerName,
+      sessionDate: dateLabel,
+      packageLabel: input.pkg.label,
+    }),
+    getEmailTemplate('booking_confirmed_owner', {
+      customerName: input.customerName,
+      sessionDate: dateLabel,
+      packageLabel: input.pkg.label,
+    }),
+  ]);
 
   const customerHtml = wrapper(`
-    <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">You're confirmed, ${escapeHtml(input.customerName)} 🎄</h1>
-    <p>Deposit received and contract signed — your Christmas session is locked in for <strong>${prettyDate}</strong>. We can't wait.</p>
+    <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">${customerTemplate.introHtml}</h1>
     <p>We'll be in touch closer to the date with your exact meeting spot and a few tips to get the most out of your session. If anything changes in the meantime, just reply to this email.</p>
   `);
 
   const ownerHtml = wrapper(`
-    <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">Booking confirmed</h1>
-    <p><strong>${escapeHtml(input.customerName)}</strong> (${escapeHtml(input.customerEmail)}) is fully confirmed for <strong>${input.pkg.label}</strong> on <strong>${prettyDate}</strong>. Deposit paid and contract signed.</p>
+    <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">${ownerTemplate.introHtml}</h1>
   `);
 
   await Promise.all([
-    resend.emails.send({ from: FROM, to: input.customerEmail, subject: 'Booking confirmed — see you soon!', html: customerHtml }),
-    resend.emails.send({ from: FROM, to: OWNER_EMAIL, subject: `Confirmed: ${input.pkg.label} — ${prettyDate}`, html: ownerHtml }),
+    resend.emails.send({ from: FROM, to: input.customerEmail, subject: customerTemplate.subject, html: customerHtml }),
+    resend.emails.send({ from: FROM, to: OWNER_EMAIL, subject: ownerTemplate.subject, html: ownerHtml }),
   ]);
 }
 

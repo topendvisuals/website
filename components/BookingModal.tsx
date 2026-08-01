@@ -3,13 +3,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Package, AvailableDate } from '@/lib/types';
 import { formatPrice } from '@/lib/packages';
+import DepositPaymentForm from './DepositPaymentForm';
+import ContractAgreement from './ContractAgreement';
+import { useDepositConfirmation } from '@/lib/useDepositConfirmation';
 
 interface BookingModalProps {
   pkg: Package;
   onClose: () => void;
 }
 
-type Step = 'date' | 'details' | 'success';
+type Step = 'date' | 'details' | 'deposit' | 'contract' | 'success';
+
+interface CreatedBooking {
+  id: string;
+  deposit_paid: boolean;
+  contract_signed: boolean;
+}
 
 function formatDateLabel(iso: string) {
   return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', {
@@ -29,6 +38,20 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Set once the booking request itself is created — from here on, the
+  // customer pays the deposit and signs the contract right in this same
+  // modal, without leaving the site or waiting on an email.
+  const [booking, setBooking] = useState<CreatedBooking | null>(null);
+
+  const { confirmingPayment, confirmDelayed, handleDepositPaid, handleManualRecheck } =
+    useDepositConfirmation<CreatedBooking>({
+      bookingId: booking?.id || '',
+      onBookingUpdate: (updated) => {
+        setBooking(updated);
+        if (updated.deposit_paid) setStep('contract');
+      },
+    });
 
   useEffect(() => {
     let cancelled = false;
@@ -83,14 +106,14 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
       if (!res.ok) {
         setSubmitError(data.error || 'Something went wrong. Please try again.');
         if (res.status === 409) {
-          // Date got taken between selection and submit — send them back a step.
           setStep('date');
           setDates((prev) => prev.filter((d) => d.session_date !== selected.session_date || d.slot_type !== selected.slot_type));
           setSelected(null);
         }
         return;
       }
-      setStep('success');
+      setBooking({ id: data.booking.id, deposit_paid: false, contract_signed: false });
+      setStep('deposit');
     } catch {
       setSubmitError('Network error — please check your connection and try again.');
     } finally {
@@ -113,7 +136,11 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
             <div>
               <p className="uppercase tracking-widest text-xs text-poinciana font-medium mb-1">{pkg.label}</p>
               <h2 id="booking-modal-title" className="font-display text-2xl text-ink">
-                {step === 'success' ? 'Request sent' : 'Request your session'}
+                {step === 'date' && 'Choose your date'}
+                {step === 'details' && 'Your details'}
+                {step === 'deposit' && 'Pay your deposit'}
+                {step === 'contract' && 'Sign your contract'}
+                {step === 'success' && "You're confirmed"}
               </h2>
             </div>
             <button
@@ -126,6 +153,21 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
               </svg>
             </button>
           </div>
+
+          {/* Progress hint so it's clear this is a short multi-step flow, not a
+              dead end at each stage */}
+          {step !== 'success' && (
+            <div className="flex gap-1.5 mb-6" aria-hidden="true">
+              {(['date', 'details', 'deposit', 'contract'] as Step[]).map((s) => (
+                <div
+                  key={s}
+                  className={`h-1 flex-1 rounded-full ${
+                    s === step ? 'bg-poinciana' : 'bg-sand-200'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
           {step === 'date' && (
             <div>
@@ -237,13 +279,50 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
                 disabled={submitting}
                 className="mt-6 w-full rounded-full bg-poinciana disabled:opacity-60 hover:bg-poinciana-600 text-sand-100 font-medium py-3.5 transition-colors"
               >
-                {submitting ? 'Sending request…' : 'Send booking request'}
+                {submitting ? 'Sending request…' : 'Continue to deposit'}
               </button>
               <p className="text-xs text-ink-700/60 mt-3 text-center">
-                This reserves your spot as pending. We'll email you a link to pay your 20% refundable
-                deposit and sign your contract to confirm it.
+                Next: pay your 20% refundable deposit and sign your contract, right here — no email
+                round-trip needed.
               </p>
             </form>
+          )}
+
+          {step === 'deposit' && booking && (
+            <div>
+              <p className="text-sm text-ink-700/80 mb-5">
+                Your date is held. Pay your refundable deposit to move on to signing your contract.
+              </p>
+              {confirmingPayment ? (
+                <p className="text-sm text-ink-700/70">Confirming your payment…</p>
+              ) : confirmDelayed ? (
+                <div className="rounded-lg bg-gold-400/15 border border-gold-400/40 p-4">
+                  <p className="text-sm text-ink-700/85 mb-3">
+                    Your card payment went through, but we&apos;re still waiting on confirmation —
+                    this sometimes takes a little longer than usual. No need to pay again.
+                  </p>
+                  <button
+                    onClick={handleManualRecheck}
+                    className="text-sm font-medium rounded-full bg-ink text-sand-100 px-5 py-2.5 hover:bg-harbour transition-colors"
+                  >
+                    Check again
+                  </button>
+                </div>
+              ) : (
+                <DepositPaymentForm bookingId={booking.id} depositCents={pkg.depositCents} onPaid={handleDepositPaid} />
+              )}
+            </div>
+          )}
+
+          {step === 'contract' && booking && (
+            <ContractAgreement
+              bookingId={booking.id}
+              customerName={form.name}
+              onSigned={(updated) => {
+                setBooking(updated);
+                setStep('success');
+              }}
+            />
           )}
 
           {step === 'success' && (
@@ -253,9 +332,10 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
                   <path d="M5 12l5 5L19 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
+              <p className="font-display text-xl text-ink mb-2">You're all set 🎄</p>
               <p className="text-ink-700/85 mb-6">
-                Check your inbox — we've sent you a link to pay your refundable deposit and sign your
-                contract. Your date is held pending that step.
+                Deposit paid, contract signed, date locked in. We've emailed you a confirmation —
+                we'll be in touch closer to the day.
               </p>
               <button onClick={onClose} className="rounded-full bg-ink text-sand-100 px-6 py-3 font-medium">
                 Done

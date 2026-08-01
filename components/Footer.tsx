@@ -27,7 +27,7 @@ export default function Footer() {
         <div className="text-sm">
           <p className="uppercase tracking-widest text-xs text-gold mb-4">Get in touch</p>
           <ul className="space-y-2 text-sand-200/90">
-            <li><a href="mailto:jethro@topendvisuals.com.au" className="hover:text-gold">jethro@topendvisuals.com.au</a></li>
+            <li><a href="mailto:jethro@topendvisuals.com" className="hover:text-gold">jethro@topendvisuals.com</a></li>
             <li><a href="tel:+61400000000" className="hover:text-gold">+61 400 000 000</a></li>
             <li>Darwin &amp; the greater Top End, NT</li>
           </ul>

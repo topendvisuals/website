@@ -38,7 +38,7 @@ export default function BookingsPage() {
           </div>
           <div className="rounded-xl border border-sand-200 p-6">
             <p className="font-display text-lg mb-2 text-ink">2. Finalise</p>
-            <p className="text-ink-700/80">Pay your 20% refundable deposit and sign your contract from the link we email you.</p>
+            <p className="text-ink-700/80">Pay your 20% refundable deposit and sign your contract — right here, no email round-trip.</p>
           </div>
           <div className="rounded-xl border border-sand-200 p-6">
             <p className="font-display text-lg mb-2 text-ink">3. Confirmed</p>

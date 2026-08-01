@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { Fraunces, Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -18,7 +16,7 @@ const inter = Inter({
   display: 'swap',
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://topendvisuals.com.au';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://topendvisuals.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -81,9 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        {children}
       </body>
     </html>
   );

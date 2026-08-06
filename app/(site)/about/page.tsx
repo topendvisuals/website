@@ -6,7 +6,7 @@ import FallbackImage from '@/components/FallbackImage';
 export const metadata: Metadata = {
   title: 'About Jethro Llewellyn | Top End Visuals',
   description:
-    'Meet Jethro Llewellyn, the photographer behind Top End Visuals — Darwin-based portrait, family and event photography built on trust, craft and local light.',
+    'Meet Jethro Llewellyn, the photographer behind Top End Visuals — Darwin-based portrait, family and event photography.',
   alternates: { canonical: '/about' },
 };
 
@@ -30,16 +30,15 @@ export default function AboutPage() {
               Jethro Llewellyn, photographer
             </h1>
             <p className="text-ink-700/85 leading-relaxed mb-4">
-              Top End Visuals started with a straightforward frustration: too many family photos felt
-              stiff, over-directed, and nothing like the people in them. Jethro set out to build a
-              studio around the opposite idea — sessions relaxed enough that people forget the camera
-              is there, shot in the kind of late-afternoon light Darwin does better than almost
-              anywhere else.
+              "I started Top End Visuals to show people my art. I built my skills, reputation and 
+              business around how I bring my own creative thinking into my photographs to present 
+              facts and the real world, in a more fictional "out-of-this-world" object. I found that 
+              my personal and artistic taste inspired a whole universe of inspiration into photography.
             </p>
             <p className="text-ink-700/85 leading-relaxed">
-              Years on, that's still the whole philosophy. Every booking — couple, family or event —
-              is planned, shot and edited personally by Jethro, from the first email to the delivered
-              gallery.
+              Many sessions later, I have realised that sssI have a gift to give all my clients. I am 
+              able to produce a sequence of photographs which tell a story and depict something more 
+              than a what's directly visible. That is why I am running Top End Visuals."
             </p>
           </div>
         </div>
@@ -49,25 +48,26 @@ export default function AboutPage() {
 
       <section className="container-wide py-20 grid md:grid-cols-3 gap-10">
         <div>
-          <p className="font-display text-2xl text-ink mb-3">Local, through and through</p>
+          <p className="font-display text-2xl text-ink mb-3">1. Locally Grown</p>
           <p className="text-ink-700/80 leading-relaxed">
-            Based in Darwin and working across the greater Top End, Jethro knows which beaches catch
-            the light at 5:45pm in November and which spots turn to mud after the first wet-season
-            downpour. That local knowledge is part of what you're booking.
+            I am Darwin raised and grown - I know the perfect spots, when, where and how to get there. 
+            You aren't just hiring photographers, you are hiring a mate who can produce something 
+            fascinating for you.
           </p>
         </div>
         <div>
-          <p className="font-display text-2xl text-ink mb-3">A craft, not a template</p>
+          <p className="font-display text-2xl text-ink mb-3">2. Locally Trusted</p>
           <p className="text-ink-700/80 leading-relaxed">
-            No cookie-cutter poses or forced smiles. Sessions are guided but unscripted — enough
-            direction to look intentional, enough room to look like your actual family.
+            Trusted by many large and local businesses, community, and friends. Top End Visuals is 
+            recognised as a trusted brand which produces well-valued and creative products for you.
           </p>
         </div>
         <div>
-          <p className="font-display text-2xl text-ink mb-3">Built on trust</p>
+          <p className="font-display text-2xl text-ink mb-3">3. Locally operating</p>
           <p className="text-ink-700/80 leading-relaxed">
-            A clear booking process, an honest contract, and a refundable deposit — because a good
-            photographer relationship starts with both sides knowing exactly where they stand.
+            Operating in the Darwin, and greater-Darwin region. Some perfect locations include Dripstone 
+            Cliffs, Nightcliff Foreshore/ Jetty, and Darwin Waterfront. Wherever you require, Top End 
+            Visuals is able to deliver.
           </p>
         </div>
       </section>

@@ -17,7 +17,7 @@ export default function ContactPage() {
           <p className="uppercase tracking-[0.2em] text-xs text-poinciana font-medium mb-4">Contact</p>
           <h1 className="font-display text-4xl sm:text-5xl text-ink mb-5">Let's talk about your session</h1>
           <p className="text-ink-700/80 leading-relaxed">
-            For Christmas bookings, use the packages page for the fastest response — for everything
+            YOYOYO For Christmas bookings, use the packages page for the fastest response — for everything
             else, reach out below.
           </p>
         </div>

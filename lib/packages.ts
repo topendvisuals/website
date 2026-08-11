@@ -7,16 +7,16 @@ export const PACKAGES: Package[] = [
   {
     id: 'single_couple',
     label: 'Single / Couple',
-    priceCents: 20000,
-    depositCents: 4000,
+    priceCents: 25000,
+    depositCents: 5000,
     tagline: 'An intimate golden-hour session',
     description:
       'A relaxed, unhurried shoot built for one or two people — perfect for a couple\'s Christmas card, an engagement update, or a solo portrait session against the Top End\'s dry-season light.',
     includes: [
-      '45-minute on-location session',
-      '15+ professionally edited images',
+      '45-minute session',
+      '25+ high-res edited photographs',
       'Private online gallery within 7 days',
-      'Print-release for personal use',
+      'FREE 2027 custom calendar',
     ],
     duration: '45 minutes',
   },
@@ -29,7 +29,7 @@ export const PACKAGES: Package[] = [
     description:
       'Room to breathe for the whole crew — kids, grandparents, the dog. A guided but easygoing session designed to capture real laughter, not stiff poses, in one of Darwin\'s best-loved golden-hour locations.',
     includes: [
-      '75-minute on-location session',
+      '75-minute session',
       '25+ professionally edited images',
       'Private online gallery within 7 days',
       'One outfit change',

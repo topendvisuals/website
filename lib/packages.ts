@@ -7,7 +7,7 @@ export const PACKAGES: Package[] = [
   {
     id: 'single_couple',
     label: 'Single / Couple',
-    priceCents: 50,
+    priceCents: 250,
     depositCents: 50,
     tagline: 'An intimate golden-hour session',
     description:

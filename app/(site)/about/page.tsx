@@ -36,7 +36,7 @@ export default function AboutPage() {
               my personal and artistic taste inspired a whole universe of inspiration into photography.
             </p>
             <p className="text-ink-700/85 leading-relaxed">
-              Many sessions later, I have realised that sssI have a gift to give all my clients. I am 
+              Many sessions later, I have realised that I have a gift to give all my clients. I am 
               able to produce a sequence of photographs which tell a story and depict something more 
               than a what's directly visible. That is why I am running Top End Visuals."
             </p>

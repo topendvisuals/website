@@ -138,7 +138,7 @@ export async function sendBookingConfirmedEmails(input: BookingEmailInput) {
 
   const customerHtml = wrapper(`
     <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">${customerTemplate.introHtml}</h1>
-    <p>We'll be in touch closer to the date with your exact meeting spot and a few tips to get the most out of your session. If anything changes in the meantime, just reply to this email.</p>
+    <p>We'll be in touch closer to the date with your exact meeting spot and a few tips to get the most out of your session. If anything changes in the meantime, shoot me a text at 0490 434 895</p>
   `);
 
   const ownerHtml = wrapper(`

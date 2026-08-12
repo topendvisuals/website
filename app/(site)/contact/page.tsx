@@ -31,13 +31,13 @@ export default function ContactPage() {
             <li>
               <p className="text-ink-700/50 uppercase tracking-widest text-xs mb-1">Email</p>
               <a href="mailto:jethro@topendvisuals.com" className="text-ink font-medium hover:text-poinciana">
-                jethro@topendvisuals.com
+                jethrollewellyn2@gmail.com
               </a>
             </li>
             <li>
               <p className="text-ink-700/50 uppercase tracking-widest text-xs mb-1">Phone</p>
               <a href="tel:+61400000000" className="text-ink font-medium hover:text-poinciana">
-                +61 400 000 000
+                +61 490 434 895
               </a>
             </li>
             <li>
@@ -47,18 +47,16 @@ export default function ContactPage() {
             <li>
               <p className="text-ink-700/50 uppercase tracking-widest text-xs mb-1">Follow along</p>
               <div className="flex gap-4 mt-1">
-                <a href="https://instagram.com/topendvisuals" target="_blank" rel="noopener noreferrer" className="text-ink font-medium hover:text-poinciana">
+                <a href="https://instagram.com/jethrollewellyn" target="_blank" rel="noopener noreferrer" className="text-ink font-medium hover:text-poinciana">
                   Instagram
                 </a>
-                <a href="https://facebook.com/topendvisuals" target="_blank" rel="noopener noreferrer" className="text-ink font-medium hover:text-poinciana">
+                <a href="https://facebook.com/jethrollewellyn" target="_blank" rel="noopener noreferrer" className="text-ink font-medium hover:text-poinciana">
                   Facebook
                 </a>
               </div>
             </li>
           </ul>
           <p className="text-xs text-ink-700/50 mt-8">
-            Placeholder contact details above — replace with real phone number and social handles
-            before launch.
           </p>
         </div>
 

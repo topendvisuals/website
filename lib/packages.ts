@@ -7,8 +7,8 @@ export const PACKAGES: Package[] = [
   {
     id: 'single_couple',
     label: 'Single / Couple',
-    priceCents: 25000,
-    depositCents: 5000,
+    priceCents: 50,
+    depositCents: 5,
     tagline: 'An intimate golden-hour session',
     description:
       'A relaxed, unhurried shoot built for one or two people — perfect for a couple\'s Christmas card, an engagement update, or a solo portrait session against the Top End\'s dry-season light.',

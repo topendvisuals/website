@@ -18,6 +18,7 @@ export interface AdminBooking {
   status: 'pending' | 'confirmed' | 'cancelled';
   deposit_paid: boolean;
   contract_signed: boolean;
+  transfer_claimed_at: string | null;
   created_at: string;
 }
 
@@ -56,6 +57,25 @@ export default function BookingDetailsModal({ booking, onClose, onUpdated }: Boo
       }
       onUpdated(data.booking);
       setEditing(false);
+    } catch {
+      setError('Network error — please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleConfirmPayment() {
+    if (!confirm('Confirm you\'ve received this deposit? This locks in the booking and emails the customer.')) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/bookings/${booking.id}/confirm-payment`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Could not confirm this booking.');
+        return;
+      }
+      onUpdated(data.booking);
     } catch {
       setError('Network error — please try again.');
     } finally {
@@ -156,6 +176,12 @@ export default function BookingDetailsModal({ booking, onClose, onUpdated }: Boo
             <DetailRow label="Status" value={booking.status} capitalize />
             <DetailRow label="Deposit paid" value={booking.deposit_paid ? 'Yes' : 'No'} />
             <DetailRow label="Contract signed" value={booking.contract_signed ? 'Yes' : 'No'} />
+            {!booking.deposit_paid && (
+              <DetailRow
+                label="Bank transfer"
+                value={booking.transfer_claimed_at ? 'Customer says they\u2019ve paid — awaiting your confirmation' : 'Not claimed yet'}
+              />
+            )}
             {booking.notes && <DetailRow label="Notes" value={booking.notes} />}
 
             {error && <p className="text-sm text-poinciana-600">{error}</p>}
@@ -164,6 +190,11 @@ export default function BookingDetailsModal({ booking, onClose, onUpdated }: Boo
               <button onClick={() => setEditing(true)} className="rounded-full bg-ink text-sand-100 px-5 py-2.5 text-sm font-medium">
                 Edit
               </button>
+              {!booking.deposit_paid && booking.status !== 'cancelled' && (
+                <button onClick={handleConfirmPayment} disabled={saving} className="rounded-full bg-poinciana text-sand-100 px-5 py-2.5 text-sm font-medium disabled:opacity-60">
+                  {saving ? 'Confirming…' : 'Confirm payment received'}
+                </button>
+              )}
               {booking.status !== 'cancelled' && (
                 <button onClick={handleCancel} disabled={saving} className="rounded-full bg-sand-100 text-poinciana px-5 py-2.5 text-sm font-medium disabled:opacity-60">
                   {saving ? 'Cancelling…' : 'Mark cancelled'}

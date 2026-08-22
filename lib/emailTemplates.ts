@@ -4,7 +4,8 @@ export type EmailTemplateKey =
   | 'customer_request'
   | 'owner_notification'
   | 'booking_confirmed_customer'
-  | 'booking_confirmed_owner';
+  | 'booking_confirmed_owner'
+  | 'transfer_claimed_customer';
 
 interface EmailTemplate {
   subject: string;
@@ -30,6 +31,11 @@ const DEFAULTS: Record<EmailTemplateKey, EmailTemplate> = {
   booking_confirmed_owner: {
     subject: 'Confirmed: {{packageLabel}} — {{sessionDate}}',
     introHtml: '{{customerName}} is fully confirmed for {{packageLabel}} on {{sessionDate}}. Deposit paid and contract signed.',
+  },
+  transfer_claimed_customer: {
+    subject: 'Booking received — confirming your deposit shortly',
+    introHtml:
+      "Thanks, {{customerName}} — we've got your booking for {{sessionDate}}. It's not confirmed just yet: Jethro checks and confirms bank transfers manually, usually within 1 business day. You'll get another email the moment it's locked in.",
   },
 };
 

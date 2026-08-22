@@ -34,4 +34,5 @@ export interface BookingRecord {
   status: 'pending' | 'confirmed' | 'cancelled';
   deposit_paid: boolean;
   contract_signed: boolean;
+  transfer_claimed_at: string | null;
 }

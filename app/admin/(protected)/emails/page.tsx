@@ -25,6 +25,10 @@ const LABELS: Record<string, { title: string; description: string }> = {
     title: 'Booking confirmed (you)',
     description: 'Sent to you at the same time as the customer confirmation.',
   },
+  transfer_claimed_customer: {
+    title: 'Transfer claimed (customer)',
+    description: "Sent when a customer clicks \"I've made the transfer\" — before you've manually confirmed it.",
+  },
 };
 
 const AVAILABLE_TOKENS = ['{{customerName}}', '{{sessionDate}}', '{{packageLabel}}'];

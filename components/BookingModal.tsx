@@ -6,13 +6,23 @@ import { formatPrice } from '@/lib/packages';
 import DepositPaymentForm from './DepositPaymentForm';
 import ContractAgreement from './ContractAgreement';
 import { useDepositConfirmation } from '@/lib/useDepositConfirmation';
+import { DEPOSIT_METHOD, BANK_DETAILS } from '@/lib/depositConfig';
 
 interface BookingModalProps {
   pkg: Package;
   onClose: () => void;
 }
 
-type Step = 'date' | 'details' | 'deposit' | 'contract' | 'success';
+// Step order differs by deposit method: the Stripe flow collects payment
+// before the contract (so an abandoned payment doesn't leave a signed
+// contract dangling); the bank-transfer flow signs the contract first, then
+// shows transfer instructions, since there's no payment confirmation to
+// wait on in the moment.
+type Step = 'date' | 'details' | 'deposit' | 'contract' | 'transfer' | 'success';
+const STEP_ORDER: Step[] =
+  DEPOSIT_METHOD === 'stripe'
+    ? ['date', 'details', 'deposit', 'contract']
+    : ['date', 'details', 'contract', 'transfer'];
 
 interface CreatedBooking {
   id: string;
@@ -113,7 +123,7 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
         return;
       }
       setBooking({ id: data.booking.id, deposit_paid: false, contract_signed: false });
-      setStep('deposit');
+      setStep(DEPOSIT_METHOD === 'stripe' ? 'deposit' : 'contract');
     } catch {
       setSubmitError('Network error — please check your connection and try again.');
     } finally {
@@ -140,7 +150,8 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
                 {step === 'details' && 'Your details'}
                 {step === 'deposit' && 'Pay your deposit'}
                 {step === 'contract' && 'Sign your contract'}
-                {step === 'success' && "You're confirmed"}
+                {step === 'transfer' && 'Pay your deposit'}
+                {step === 'success' && (DEPOSIT_METHOD === 'stripe' ? "You're confirmed" : 'Almost there')}
               </h2>
             </div>
             <button
@@ -158,7 +169,7 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
               dead end at each stage */}
           {step !== 'success' && (
             <div className="flex gap-1.5 mb-6" aria-hidden="true">
-              {(['date', 'details', 'deposit', 'contract'] as Step[]).map((s) => (
+              {STEP_ORDER.map((s) => (
                 <div
                   key={s}
                   className={`h-1 flex-1 rounded-full ${
@@ -320,9 +331,33 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
               customerName={form.name}
               onSigned={(updated) => {
                 setBooking(updated);
-                setStep('success');
+                setStep(DEPOSIT_METHOD === 'stripe' ? 'success' : 'transfer');
               }}
             />
+          )}
+
+          {step === 'transfer' && booking && (
+            <div>
+              <p className="text-sm text-ink-700/80 mb-5">
+                Your date is held and your contract's signed. Transfer your{' '}
+                <strong>{formatPrice(pkg.depositCents)} refundable deposit</strong> using the
+                details below, including the reference — this is how I match your payment to your
+                booking.
+              </p>
+              <div className="rounded-lg bg-sand-200/60 p-4 mb-5 space-y-2 text-sm">
+                <div className="flex justify-between"><span className="text-ink-700/60">Account name</span><span className="font-medium">{BANK_DETAILS.accountName}</span></div>
+                <div className="flex justify-between"><span className="text-ink-700/60">BSB</span><span className="font-medium">{BANK_DETAILS.bsb}</span></div>
+                <div className="flex justify-between"><span className="text-ink-700/60">Account number</span><span className="font-medium">{BANK_DETAILS.accountNumber}</span></div>
+                <div className="flex justify-between"><span className="text-ink-700/60">Reference (required)</span><span className="font-medium">{booking.id.slice(0, 8).toUpperCase()}</span></div>
+              </div>
+              <TransferClaimButton
+                bookingId={booking.id}
+                onDone={(updated) => {
+                  setBooking(updated);
+                  setStep('success');
+                }}
+              />
+            </div>
           )}
 
           {step === 'success' && (
@@ -332,11 +367,24 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
                   <path d="M5 12l5 5L19 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <p className="font-display text-xl text-ink mb-2">You're all set 🎄</p>
-              <p className="text-ink-700/85 mb-6">
-                Deposit paid, contract signed, date locked in. We've emailed you a confirmation —
-                we'll be in touch closer to the day.
-              </p>
+              {DEPOSIT_METHOD === 'stripe' ? (
+                <>
+                  <p className="font-display text-xl text-ink mb-2">You're all set 🎄</p>
+                  <p className="text-ink-700/85 mb-6">
+                    Deposit paid, contract signed, date locked in. We've emailed you a confirmation
+                    — we'll be in touch closer to the day.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display text-xl text-ink mb-2">Booking received</p>
+                  <p className="text-ink-700/85 mb-6">
+                    Your contract's signed and your date is held. We've emailed you a
+                    confirmation — Jethro checks bank transfers manually, usually within 1 business
+                    day, and you'll get a second email the moment your date is fully confirmed.
+                  </p>
+                </>
+              )}
               <button onClick={onClose} className="rounded-full bg-ink text-sand-100 px-6 py-3 font-medium">
                 Done
               </button>
@@ -344,6 +392,51 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Small self-contained button for the bank-transfer step — kept in this
+// file rather than a separate component since it's only ever used here and
+// is simple enough not to warrant its own file.
+function TransferClaimButton({
+  bookingId,
+  onDone,
+}: {
+  bookingId: string;
+  onDone: (booking: CreatedBooking) => void;
+}) {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleClick() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/transfer-claimed`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+      onDone(data.booking);
+    } catch {
+      setError('Network error — please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div>
+      {error && <p className="text-sm text-poinciana-600 mb-3">{error}</p>}
+      <button
+        onClick={handleClick}
+        disabled={submitting}
+        className="w-full rounded-full bg-poinciana disabled:opacity-60 hover:bg-poinciana-600 text-sand-100 font-medium py-3.5 transition-colors"
+      >
+        {submitting ? 'Saving…' : "I've made the transfer"}
+      </button>
     </div>
   );
 }

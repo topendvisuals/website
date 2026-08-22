@@ -125,7 +125,15 @@ export default function AdminBookingsPage() {
                   <td className="px-4 py-3">
                     <StatusBadge status={b.status} />
                   </td>
-                  <td className="px-4 py-3">{b.deposit_paid ? '✓' : '—'}</td>
+                  <td className="px-4 py-3">
+                    {b.deposit_paid ? (
+                      '✓'
+                    ) : b.transfer_claimed_at ? (
+                      <span className="text-poinciana text-xs font-medium">Claimed — check bank</span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="px-4 py-3">{b.contract_signed ? '✓' : '—'}</td>
                 </tr>
               ))}

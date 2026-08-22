@@ -151,6 +151,35 @@ export async function sendBookingConfirmedEmails(input: BookingEmailInput) {
   ]);
 }
 
+// Sent when a customer clicks "I've made the transfer" on the new bank
+// deposit step. This is deliberately separate from sendBookingConfirmedEmails
+// — that one only fires once Jethro has manually confirmed the money
+// actually arrived, via the admin dashboard.
+export async function sendTransferClaimedEmail(input: BookingEmailInput) {
+  const resend = getResend();
+  const dateLabel = prettyDate(input.sessionDate);
+
+  const { subject, introHtml } = await getEmailTemplate('transfer_claimed_customer', {
+    customerName: input.customerName,
+    sessionDate: dateLabel,
+    packageLabel: input.pkg.label,
+  });
+
+  const customerHtml = wrapper(`
+    <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">${introHtml}</h1>
+  `);
+
+  const ownerHtml = wrapper(`
+    <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">Transfer claimed — check your bank</h1>
+    <p>${escapeHtml(input.customerName)} says they've sent the deposit for ${escapeHtml(input.pkg.label)} on ${dateLabel}. Check your account and confirm it in the admin dashboard once it's landed.</p>
+  `);
+
+  await Promise.all([
+    resend.emails.send({ from: FROM, to: input.customerEmail, subject, html: customerHtml }),
+    resend.emails.send({ from: FROM, to: OWNER_EMAIL, subject: `Transfer claimed: ${input.pkg.label} — ${dateLabel}`, html: ownerHtml }),
+  ]);
+}
+
 export async function sendContactFormEmail(input: { name: string; email: string; phone?: string; message: string }) {
   const resend = getResend();
   const html = wrapper(`

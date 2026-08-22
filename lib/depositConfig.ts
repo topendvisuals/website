@@ -10,6 +10,6 @@ export const DEPOSIT_METHOD: 'stripe' | 'bank_transfer' = 'bank_transfer';
 // included in the confirmation email so they have a record of what to pay.
 export const BANK_DETAILS = {
   accountName: 'Jethro Llewellyn',
-  bsb: '000-000',
-  accountNumber: '00000000',
+  bsb: '923-100',
+  accountNumber: '825333748',
 };

@@ -1,4 +1,4 @@
-export type GalleryCategory = 'portrait' | 'couple' | 'family' | 'event' | 'wedding';
+sexport type GalleryCategory = 'portrait' | 'couple' | 'family' | 'event' | 'wedding';
 
 export interface GalleryItem {
   id: string;
@@ -28,11 +28,11 @@ const TONES: GalleryItem['tone'][] = ['harbour', 'gold', 'poinciana', 'ink'];
 // the extra slots just show the placeholder tile — upload more by raising
 // the number here (or just ask and it'll be updated to match what you have).
 const COUNTS: Record<GalleryCategory, number> = {
-  family: 5,
-  couple: 9,
-  portrait: 5,
-  event: 7,
-  wedding: 1,
+  family: 6,
+  couple: 5,
+  portrait: 16,
+  event: 9,
+  wedding: 7,
 };
 
 function buildGallery(): GalleryItem[] {

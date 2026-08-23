@@ -28,11 +28,11 @@ const TONES: GalleryItem['tone'][] = ['harbour', 'gold', 'poinciana', 'ink'];
 // the extra slots just show the placeholder tile — upload more by raising
 // the number here (or just ask and it'll be updated to match what you have).
 const COUNTS: Record<GalleryCategory, number> = {
-  family: 3,
-  couple: 3,
-  portrait: 3,
-  event: 3,
-  wedding: 2,
+  family: 6,
+  couple: 5,
+  portrait: 16,
+  event: 9,
+  wedding: 7,
 };
 
 function buildGallery(): GalleryItem[] {

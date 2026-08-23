@@ -27,8 +27,8 @@ export default function Footer() {
         <div className="text-sm">
           <p className="uppercase tracking-widest text-xs text-gold mb-4">Get in touch</p>
           <ul className="space-y-2 text-sand-200/90">
-            <li><a href="mailto:jethrollewellyn2@gmail.com" className="hover:text-gold">jethrollewellyn2@gmail.com</a></li>
-            <li><a href="tel:+61490434895" className="hover:text-gold">+61 490 434 895</a></li>
+            <li><a href="mailto:jethro@topendvisuals.com" className="hover:text-gold">jethrollewellyn2@gmail.com</a></li>
+            <li><a href="tel:+61400000000" className="hover:text-gold">+61 490 434 895</a></li>
             <li>Darwin &amp; the greater Top End, NT</li>
           </ul>
         </div>

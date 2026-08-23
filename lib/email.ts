@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { Package } from './types';
 import { formatPrice } from './packages';
 import { getEmailTemplate } from './emailTemplates';
+import { getBookingReference } from './bookingReference';
 
 function getResend() {
   if (!process.env.RESEND_API_KEY) {
@@ -91,6 +92,7 @@ export async function sendCustomerBookingRequestEmail(input: BookingEmailInput) 
 export async function sendOwnerBookingNotificationEmail(input: BookingEmailInput) {
   const resend = getResend();
   const dateLabel = prettyDate(input.sessionDate);
+  const reference = getBookingReference(input.bookingId);
 
   const { subject, introHtml } = await getEmailTemplate('owner_notification', {
     customerName: input.customerName,
@@ -106,6 +108,7 @@ export async function sendOwnerBookingNotificationEmail(input: BookingEmailInput
       <tr><td style="padding:6px 0;color:#5b6b6d;">Phone</td><td style="padding:6px 0;text-align:right;">${escapeHtml(input.customerPhone)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Package</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${escapeHtml(input.pkg.label)}</td></tr>
       <tr><td style="padding:6px 0;color:#5b6b6d;">Date</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${dateLabel} (${input.slotType})</td></tr>
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Reference</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${reference}</td></tr>
       ${input.notes ? `<tr><td style="padding:6px 0;color:#5b6b6d;">Notes</td><td style="padding:6px 0;text-align:right;">${escapeHtml(input.notes)}</td></tr>` : ''}
     </table>
     <p>Status: <strong>Pending</strong> — waiting on deposit &amp; signed contract. You'll get a second email the moment both are done.</p>
@@ -158,6 +161,7 @@ export async function sendBookingConfirmedEmails(input: BookingEmailInput) {
 export async function sendTransferClaimedEmail(input: BookingEmailInput) {
   const resend = getResend();
   const dateLabel = prettyDate(input.sessionDate);
+  const reference = getBookingReference(input.bookingId);
 
   const { subject, introHtml } = await getEmailTemplate('transfer_claimed_customer', {
     customerName: input.customerName,
@@ -167,16 +171,25 @@ export async function sendTransferClaimedEmail(input: BookingEmailInput) {
 
   const customerHtml = wrapper(`
     <h1 style="font-family:Georgia,serif;font-size:22px;color:#0E1B1D;margin:0 0 16px 0;">${introHtml}</h1>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Your reference</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${reference}</td></tr>
+    </table>
+    <p style="color:#5b6b6d;font-size:13px;">Keep this handy in case there's ever a question about your transfer — it's how your payment gets matched to your booking.</p>
   `);
 
   const ownerHtml = wrapper(`
     <h1 style="font-family:Georgia,serif;font-size:20px;color:#0E1B1D;margin:0 0 16px 0;">Transfer claimed — check your bank</h1>
-    <p>${escapeHtml(input.customerName)} says they've sent the deposit for ${escapeHtml(input.pkg.label)} on ${dateLabel}. Check your account and confirm it in the admin dashboard once it's landed.</p>
+    <p>${escapeHtml(input.customerName)} says they've sent the deposit for ${escapeHtml(input.pkg.label)} on ${dateLabel}.</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Look for reference</td><td style="padding:6px 0;text-align:right;font-weight:bold;font-size:18px;">${reference}</td></tr>
+      <tr><td style="padding:6px 0;color:#5b6b6d;">Expected amount</td><td style="padding:6px 0;text-align:right;font-weight:bold;">${formatPrice(input.pkg.depositCents)}</td></tr>
+    </table>
+    <p>Check your account and confirm it in the admin dashboard once it's landed.</p>
   `);
 
   await Promise.all([
     resend.emails.send({ from: FROM, to: input.customerEmail, subject, html: customerHtml }),
-    resend.emails.send({ from: FROM, to: OWNER_EMAIL, subject: `Transfer claimed: ${input.pkg.label} — ${dateLabel}`, html: ownerHtml }),
+    resend.emails.send({ from: FROM, to: OWNER_EMAIL, subject: `Transfer claimed: ${input.pkg.label} — ${dateLabel} (ref ${reference})`, html: ownerHtml }),
   ]);
 }
 

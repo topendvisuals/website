@@ -7,6 +7,7 @@ import DepositPaymentForm from './DepositPaymentForm';
 import ContractAgreement from './ContractAgreement';
 import { useDepositConfirmation } from '@/lib/useDepositConfirmation';
 import { DEPOSIT_METHOD, BANK_DETAILS } from '@/lib/depositConfig';
+import { getBookingReference } from '@/lib/bookingReference';
 
 interface BookingModalProps {
   pkg: Package;
@@ -348,7 +349,7 @@ export default function BookingModal({ pkg, onClose }: BookingModalProps) {
                 <div className="flex justify-between"><span className="text-ink-700/60">Account name</span><span className="font-medium">{BANK_DETAILS.accountName}</span></div>
                 <div className="flex justify-between"><span className="text-ink-700/60">BSB</span><span className="font-medium">{BANK_DETAILS.bsb}</span></div>
                 <div className="flex justify-between"><span className="text-ink-700/60">Account number</span><span className="font-medium">{BANK_DETAILS.accountNumber}</span></div>
-                <div className="flex justify-between"><span className="text-ink-700/60">Reference (required)</span><span className="font-medium">{booking.id.slice(0, 8).toUpperCase()}</span></div>
+                <div className="flex justify-between"><span className="text-ink-700/60">Reference (required)</span><span className="font-medium">{getBookingReference(booking.id)}</span></div>
               </div>
               <TransferClaimButton
                 bookingId={booking.id}

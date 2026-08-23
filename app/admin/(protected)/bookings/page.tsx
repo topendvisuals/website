@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import BookingCalendar from '@/components/admin/BookingCalendar';
 import BookingDetailsModal, { AdminBooking } from '@/components/admin/BookingDetailsModal';
 import { formatPrice } from '@/lib/packages';
+import { getBookingReference } from '@/lib/bookingReference';
 
 type ViewMode = 'list' | 'calendar';
 
@@ -103,6 +104,7 @@ export default function AdminBookingsPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Date</th>
                 <th className="px-4 py-3 font-medium">Customer</th>
+                <th className="px-4 py-3 font-medium">Reference</th>
                 <th className="px-4 py-3 font-medium">Package</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Deposit</th>
@@ -121,6 +123,7 @@ export default function AdminBookingsPage() {
                     {b.slot_type === 'sunrise' ? ' ☀︎' : ''}
                   </td>
                   <td className="px-4 py-3">{b.customer_name}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-ink-700/70">{getBookingReference(b.id)}</td>
                   <td className="px-4 py-3">{b.package_label}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={b.status} />
@@ -139,7 +142,7 @@ export default function AdminBookingsPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-ink-700/50">
+                  <td colSpan={7} className="px-4 py-8 text-center text-ink-700/50">
                     No bookings match these filters.
                   </td>
                 </tr>

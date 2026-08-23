@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatPrice } from '@/lib/packages';
+import { getBookingReference } from '@/lib/bookingReference';
 
 export interface AdminBooking {
   id: string;
@@ -174,6 +175,7 @@ export default function BookingDetailsModal({ booking, onClose, onUpdated }: Boo
             <DetailRow label="Session" value={booking.slot_type === 'sunrise' ? 'Sunrise' : 'Standard'} />
             <DetailRow label="Price" value={`${formatPrice(booking.price_cents)} (deposit ${formatPrice(booking.deposit_cents)})`} />
             <DetailRow label="Status" value={booking.status} capitalize />
+            <DetailRow label="Booking reference" value={getBookingReference(booking.id)} />
             <DetailRow label="Deposit paid" value={booking.deposit_paid ? 'Yes' : 'No'} />
             <DetailRow label="Contract signed" value={booking.contract_signed ? 'Yes' : 'No'} />
             {!booking.deposit_paid && (

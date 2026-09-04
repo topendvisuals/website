@@ -34,7 +34,13 @@ export async function GET(req: NextRequest) {
       (s) => !takenSet.has(`${s.session_date}__${s.slot_type}`)
     );
 
-    return NextResponse.json({ dates: available });
+    // Explicitly refuse caching at every layer (browser, Netlify's CDN) —
+    // availability changes the instant someone books, so a cached response
+    // here would show dates as open when they've actually just been taken.
+    return NextResponse.json(
+      { dates: available },
+      { headers: { 'Cache-Control': 'no-store, must-revalidate' } }
+    );
   } catch (err: any) {
     console.error('GET /api/availability error', err);
     return NextResponse.json(
